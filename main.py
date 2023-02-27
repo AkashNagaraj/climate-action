@@ -21,7 +21,7 @@ from meteostat import Point, Daily, Monthly, Stations
 def get_lat_long():
     data_dir = "data/worldcities.csv"
     df = pd.read_csv(data_dir)
-    return df.head(n=20)
+    return df.head(n=70)
 
 def forecast_to_df(model, steps=12):
     forecast = model.get_forecast(steps=steps)
