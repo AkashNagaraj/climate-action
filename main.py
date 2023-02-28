@@ -21,7 +21,7 @@ from meteostat import Point, Daily, Monthly, Stations
 def get_lat_long():
     data_dir = "data/worldcities.csv"
     df = pd.read_csv(data_dir)
-    return df.head(n=70)
+    return df.head(n=200)
 
 def forecast_to_df(model, steps=12):
     forecast = model.get_forecast(steps=steps)
@@ -72,7 +72,9 @@ def predict_using_arima(end,data):
     
     predictions = []
     
-    required_prediction_size = 2030 - end.year
+    new_end = '2030-1-1'
+
+    required_prediction_size = len(pd.date_range(end,new_end,freq='M'))-1
 
     for i in range(required_prediction_size):
         model = sm.tsa.arima.ARIMA(data, order=(p,d,q))
@@ -82,7 +84,7 @@ def predict_using_arima(end,data):
         predictions.append(yhat)
         data = np.append(data,yhat)
 
-    return predictions
+    return predictions, new_end
 
 
 def predict_neural_network(end,df):
@@ -132,14 +134,13 @@ def get_city_specific_data(city_details):
     if(data.isna().sum()<threshold):
         data = data.fillna(method="ffill")
         data = data.fillna(0)
-        modified_data = avg_year_temp(data)
-        predictions = predict_using_arima(end,modified_data)
-        complete_temp_data = modified_data + predictions
+        #modified_data = avg_year_temp(data)
+        predictions, new_end = predict_using_arima(end,data)
+        complete_temp_data = data.tolist() + predictions
 
-        #print("The city details are : ",city_details)
-        #print("All predictions are :", complete_temp_data)
+        print("The city details are : {} and the complete_temp_data size : {}".format(city_details,len(complete_temp_data)))
         
-        return start, end, complete_temp_data
+        return start, new_end, complete_temp_data
     
     else:
 
@@ -153,14 +154,11 @@ def get_meteostat_data(city_details):
     
     all_temp_data, all_date_data, all_lat_data, all_long_data, all_city_data = [],[], [],[],[]
     for idx, row in city_data.iterrows():
+
         start, end, temp_data = get_city_specific_data((row["lat"],row["lng"],row["city"]))
         if len(temp_data)!=0:
-            year_range = np.arange(start.year,2031)
-            
+            year_range = pd.date_range(start,end,freq='M')       
             all_temp_data += temp_data
-            
-            print(len(temp_data),len(year_range))
-
             all_date_data += year_range.tolist()
             all_lat_data += [row["lat"]]*len(year_range)
             all_long_data += [row["lng"]]*len(year_range)
@@ -182,12 +180,6 @@ def get_meteostat_data(city_details):
 def main():
     city_details = get_lat_long()
     get_meteostat_data(city_details)
-    """
-    build_dataframe()
-    plot_mapbox()
-    air_quality()
-    compare_temperature_air_quality()
-    """
 
 if __name__=="__main__":
     main()
