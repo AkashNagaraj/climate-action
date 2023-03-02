@@ -1,0 +1,9 @@
+pandas
+ozon3
+seaborn
+matplotlib
+numpy
+sklearn
+plotly
+statsmodels
+meteostat
